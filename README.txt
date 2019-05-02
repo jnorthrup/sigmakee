@@ -168,60 +168,68 @@ PS1="$HOST_TYPE:"PS1
 Linux Installation
 ==================
 
-mkdir workspace
-mkdir Programs
-cd Programs
-wget 'https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.23/bin/apache-tomcat-8.5.23.zip'
-wget 'http://wordnetcode.princeton.edu/3.0/WordNet-3.0.tar.gz'
-wget 'http://wwwlehre.dhbw-stuttgart.de/~sschulz/WORK/E_DOWNLOAD/V_2.0/E.tgz'
-tar -xvzf E.tgz
-unzip apache-tomcat-8.5.23.zip
-rm apache-tomcat-8.5.23.zip
-cd ~/Programs/apache-tomcat-8.5.23/bin
-chmod 777 *
-cd ~/workspace/
-sudo apt-get install git
+```bash
+set -x
+ sudo add-apt-repository universe &&
+sudo apt update -y
+ pkg=(
+    curl
+    wget
+    git
+    ant
+    graphviz
+    make
+    gcc
+
+   )
+
+
+sudo apt install  ${pkg[*]}
+pushd ${PREFIX:=${HOME}}
+mkdir -p workspace Programs  .sigmakee/KBs
+pushd Programs
+git clone git@github.com:jnorthrup/eprover E
+tar xzf <( curl https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.23/bin/apache-tomcat-8.5.23.tar.gz )
+popd
+chmod 777 -r Programs/apache-tomcat-8.5.23/bin
+pushd  workspace/
 git clone https://github.com/ontologyportal/sigmakee
-git clone https://github.com/ontologyportal/sumo
-cd ~
-mkdir .sigmakee
-cd .sigmakee
-mkdir KBs
-cp -R ~/workspace/sumo/* KBs
-me="$(whoami)"
-cp ~/workspace/sigmakee/config.xml ~/.sigmakee/KBs
-sed -i "s/theuser/$me/g" KBs/config.xml
-cd ~/Programs
-gunzip WordNet-3.0.tar.gz
-tar -xvf WordNet-3.0.tar
-cp WordNet-3.0/dict/* ~/.sigmakee/KBs/WordNetMappings/
-cd ~/Programs/E
-sudo apt-get install make
-sudo apt-get install gcc
+
+sed -e 's,~/,'${PREFIX}/',g'  -e 's,theuser,'$(whoami)',g' -i sigmakee/config.xml
+cat < sigmakee/config.xml >$PREFIX/.sigmakee/KBs/config.xml
+
+git clone --depth=1 https://github.com/ontologyportal/sumo
+cp -sa $PWD/sumo/. $PREFIX/.sigmakee/KBs/
+popd
+pushd Programs
+tar xzf <( curl 'http://wordnetcode.princeton.edu/3.0/WordNet-3.0.tar.gz' )
+cp -la WordNet-3.0/dict/* $PREFIX/.sigmakee/KBs/WordNetMappings/
+popd
+pushd $PREFIX/Programs/E
 ./configure
-make
-make install
-cd ~
-sudo apt-get install graphviz
-echo "export SIGMA_HOME=~/.sigmakee" >> .bashrc
-echo "export SIGMA_SRC=~/workspace/sigmakee" >> .bashrc
-echo "export ONTOLOGYPORTAL_GIT=~/workspace" >> .bashrc
-echo "export CATALINA_OPTS=\"$CATALINA_OPTS -Xms500M -Xmx2500M\"" >> .bashrc
-echo "export CATALINA_HOME=~/Programs/apache-tomcat-8.5.23" >> .bashrc
-sed -e 's,~/,'$HOME/',g' -i   ~/.sigmakee/KBs/config.xml
+make -j$(grep -c ^processor /proc/cpuinfo) &&make install
+popd
+cat >>.bashrc <<EOF
+export SIGMA_HOME=$PREFIX/.sigmakee"  \
+       SIGMA_SRC=$PREFIX/workspace/sigmakee"  \
+       ONTOLOGYPORTAL_GIT=$PREFIX/workspace"  \
+       CATALINA_OPTS=\"$CATALINA_OPTS -Xms500M -Xmx2500M\""  \
+       CATALINA_HOME=$PREFIX/Programs/apache-tomcat-8.5.23"
+EOF
+
+[[ $PREFIX/.bashrc == ~/.bashrc ]] || echo >>~/.bashrc "source $PREFIX/.bashrc"
 source .bashrc
-cd ~/workspace/sigmakee
-sudo add-apt-repository universe
-sudo apt-get update
-sudo apt-get install ant
+pushd  workspace/sigmakee
 ant
+set +x
+
+```
 
 Follow the steps in section "Account Management" below to set up accounts
 
 To test run
 
-  java  -Xmx2500m -classpath ~/workspace/sigmakee/build/classes:/home/theuser/workspace/sigmakee/build/lib/*
-    com.articulate.sigma.KB
+  java  -Xmx2500m -classpath ~/workspace/sigmakee/build/classes:/home/theuser/workspace/sigmakee/build/lib/* com.articulate.sigma.KB
 
 
 Start Tomcat with
