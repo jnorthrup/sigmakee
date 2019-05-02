@@ -601,7 +601,7 @@ public class KB implements Serializable {
      * true if i is functional expression, else returns
      * false.
      *
-     * @param i A String denoting a possibly functional literal.
+     * @param s A String denoting a possibly functional literal.
      * @return true or false.
      */
     public boolean isFunctional(String s) {

@@ -208,6 +208,7 @@ echo "export SIGMA_SRC=~/workspace/sigmakee" >> .bashrc
 echo "export ONTOLOGYPORTAL_GIT=~/workspace" >> .bashrc
 echo "export CATALINA_OPTS=\"$CATALINA_OPTS -Xms500M -Xmx2500M\"" >> .bashrc
 echo "export CATALINA_HOME=~/Programs/apache-tomcat-8.5.23" >> .bashrc
+sed -e 's,~/,'$HOME/',g' -i   ~/.sigmakee/KBs/config.xml
 source .bashrc
 cd ~/workspace/sigmakee
 sudo add-apt-repository universe
